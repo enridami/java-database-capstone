@@ -1,4 +1,4 @@
-# Administrator
+## Administrator user stories
 
 **Title:**
 _As an Administrator, I want to log in with my username and password, so that I can manage the platform securely._
@@ -73,7 +73,7 @@ _As an Administrator, I want to run a MySQL stored procedure via MySQL CLI to ge
 **Notes:**
 - Document the exact CLI command and expected output format in the README/report.
 
-# Patient
+## Patient user stories
 
 **Title:**
 _As a Patient, I want to view a list of doctors without logging in, so that I can explore options before registering._
@@ -163,7 +163,7 @@ _As a Patient, I want to view my upcoming appointments, so that I can prepare ac
 **Notes:**
 - Consider pagination if many appointments exist.
 
-# Doctor
+## Doctor user stories
 
 **Title:**
 _As a Doctor, I want to log in to the portal, so that I can manage my appointments._
