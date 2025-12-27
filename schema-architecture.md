@@ -9,4 +9,4 @@ Esta aplicación de Spring Boot utiliza tanto controladores MVC como REST. Se ut
 5. MYSQL Repositories accede a MYSQL Database, mientras que MongoDB Repository accede a MongoDB Database.
 6. Se acceden a los modelos correspondientes de MySQL, o MongoDB segun el caso.
 7. De MySQL, mediante las entidades JPA para datos estructurados se puede acceder a Patient, Doctor, Appointment y Admin. Mientras que por el lado de MongoDB se accede a la Prescription que es el modelo de MongoDB Models para datos dinamicos.
-8. 
+
