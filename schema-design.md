@@ -1,98 +1,122 @@
+| name                  | about                                                                       | title                             | labels       | assignees |
+|-----------------------|------------------------------------------------------------------------------|-----------------------------------|--------------|-----------|
+| Database Schema Design | Defines relational and document-based schema for Smart Clinic architecture | "[DB] Design schema architecture" | schema-design |           |
 
-## MySQL Database Design
-### Patients
-- id: INT, Primary Key, Auto Increment
-- first_name: VARCHAR(100), Not Null
-- last_name: VARCHAR(100), Not Null
-- email: VARCHAR(150), Not Null, Unique
-- password_hash: VARCHAR(255), Not Null
-- phone: VARCHAR(30), Null
-- date_of_birth: DATE, Null
-- created_at: DATETIME, Not Null (default current timestamp)
-- updated_at: DATETIME, Null
+> [!IMPORTANT]  
+> Ensure normalization in SQL design and flexibility in NoSQL design.  
+> Provide justifications and comments to guide future implementation decisions.
 
-**Notes:**
-- Email must be unique to support login/registration.
-- Store passwords as hashes only (never plain text).
-- If a patient is deleted, consider whether appointments should be retained (audit/history) vs deleted (privacy). A common policy is SOFT DELETE.
+---
 
-### Doctors
-- id: INT, Primary Key, Auto Increment
-- first_name: VARCHAR(100), Not Null
-- last_name: VARCHAR(100), Not Null
-- email: VARCHAR(150), Not Null, Unique
-- specialization: VARCHAR(120), Not Null
-- phone: VARCHAR(30), Null
-- office_location: VARCHAR(150), Null
-- bio: TEXT, Null
-- active: TINYINT(1), Not Null (default 1)
-- created_at: DATETIME, Not Null (default current timestamp)
-- updated_at: DATETIME, Null
+## **MySQL Database Design**
 
-**Notes:**
-- Email unique: prevents duplicate doctor profiles.
-- `active` allows disabling profiles without deleting and breaking FK references.
+Relational data includes structured records that benefit from strong typing and inter-table relationships.  
+This design ensures consistency for patients, doctors, and appointment workflows.
 
-### Appointments
-- id: INT, Primary Key, Auto Increment
-- doctor_id: INT, Not Null, Foreign Key → doctors(id)
-- patient_id: INT, Not Null, Foreign Key → patients(id)
-- start_time: DATETIME, Not Null
-- end_time: DATETIME, Not Null
-- status: INT, Not Null (0 = Scheduled, 1 = Completed, 2 = Cancelled)
-- reason: VARCHAR(255), Null
-- created_at: DATETIME, Not Null (default current timestamp)
+---
 
-**Constraints / Rules (business-level, enforce in code and optionally DB):**
-- Prevent overlapping appointments for the same doctor:
-  - Enforced via service logic; optionally add a unique constraint approach is limited for overlap, so validate in code.
-- For this capstone: duration should be 1 hour:
-  - Enforce `end_time = start_time + 1 hour` in service layer.
+### **Table: patients**
 
-**Notes:**
-- For deletes:
-  - If doctor is deleted, prefer restricting deletion or soft-delete (because appointments reference it).
-  - If patient is deleted, decide whether to anonymize appointment records.
+| Column Name    | Data Type     | Constraints                  |
+|----------------|---------------|------------------------------|
+| id             | INT           | PK, AUTO_INCREMENT           |
+| name           | VARCHAR(100)  | NOT NULL                     |
+| email          | VARCHAR(100)  | NOT NULL, UNIQUE             |
+| phone_number   | VARCHAR(15)   | NOT NULL                     |
+| date_of_birth  | DATE          |                              |
+| gender         | VARCHAR(10)   | CHECK (gender IN ('M','F'))  |
+| registered_at  | TIMESTAMP     | DEFAULT CURRENT_TIMESTAMP    |
 
+---
 
-### Admin
-- id: INT, Primary Key, Auto Increment
-- username: VARCHAR(80), Not Null, Unique
-- password_hash: VARCHAR(255), Not Null
-- email: VARCHAR(150), Null, Unique
-- created_at: DATETIME, Not Null (default current timestamp)
-- last_login_at: DATETIME, Null
+### **Table: doctors**
 
-**Notes:**
-- Admin is separated from patients/doctors for clear role boundaries.
+| Column Name     | Data Type     | Constraints                     |
+|------------------|---------------|---------------------------------|
+| id               | INT           | PK, AUTO_INCREMENT              |
+| name             | VARCHAR(100)  | NOT NULL                        |
+| specialization   | VARCHAR(100)  | NOT NULL                        |
+| email            | VARCHAR(100)  | NOT NULL, UNIQUE                |
+| phone_number     | VARCHAR(15)   |                                 |
+| is_active        | BOOLEAN       | DEFAULT TRUE                    |
 
-### Doctor_unavailability
-- id: INT, Primary Key, Auto Increment
-- doctor_id: INT, Not Null, Foreign Key → doctors(id)
-- start_time: DATETIME, Not Null
-- end_time: DATETIME, Not Null
-- reason: VARCHAR(255), Null
-- created_at: DATETIME, Not Null (default current timestamp)
+---
 
-**Notes:**
-- Supports the user story “doctor marks unavailability”.
-- Booking service should reject appointments that overlap these ranges.
+### **Table: appointments**
 
+| Column Name      | Data Type     | Constraints                            |
+|-------------------|---------------|----------------------------------------|
+| id                | INT           | PK, AUTO_INCREMENT                     |
+| patient_id        | INT           | FK → patients(id), NOT NULL            |
+| doctor_id         | INT           | FK → doctors(id), NOT NULL             |
+| appointment_time  | DATETIME      | NOT NULL                               |
+| status            | INT           | DEFAULT 0 (0=Scheduled, 1=Completed, 2=Cancelled) |
+| created_at        | TIMESTAMP     | DEFAULT CURRENT_TIMESTAMP              |
 
-## MongoDB Collection Design
+> If a patient is deleted, consider **CASCADE DELETE** for historical cleanup,  
+> or archive via logical deletion (e.g., `is_active = FALSE`).
 
-### Collection: prescriptions
+---
+
+### **Table: admin**
+
+| Column Name  | Data Type     | Constraints               |
+|---------------|---------------|---------------------------|
+| id            | INT           | PK, AUTO_INCREMENT        |
+| username      | VARCHAR(50)   | NOT NULL, UNIQUE          |
+| password_hash | VARCHAR(255)  | NOT NULL                  |
+| email         | VARCHAR(100)  | NOT NULL, UNIQUE          |
+| role          | VARCHAR(50)   | DEFAULT 'superadmin'      |
+
+---
+
+## **MongoDB Collection Design**
+
+Unstructured or semi-structured data such as prescriptions benefit from schema flexibility.  
+This example uses embedded documents and supports future extensibility.
+
+---
+
+### **Collection: prescriptions**
+
 ```json
 {
-  "_id": "ObjectId('64abc123456')",
-  "patientName": "John Smith",
-  "appointmentId": 51,
-  "medication": "Paracetamol",
-  "dosage": "500mg",
-  "doctorNotes": "Tome 1 tableta cada 6 horas.",
-  "refillCount": 2,
+  "_id": "ObjectId('64fabc91234f')",
+  "appointmentId": 103,
+  "patientId": 23,
+  "doctorId": 7,
+  "patientName": "Elena Ruiz",
+  "medications": [
+    {
+      "name": "Amoxicillin",
+      "dosage": "500mg",
+      "frequency": "3 times a day",
+      "duration": "7 days"
+    },
+    {
+      "name": "Ibuprofen",
+      "dosage": "200mg",
+      "frequency": "As needed"
+    }
+  ],
+  "doctorNotes": "Advise rest and hydration. Follow up in 1 week.",
+  "issuedAt": "2025-07-03T10:15:00Z",
   "pharmacy": {
-    "name": "Walgreens SF",
-    "location": "Market Street"
+    "name": "Greenleaf Pharmacy",
+    "location": "432 Oak Blvd, Charleston, SC"
+  },
+  "refillCount": 1,
+  "tags": ["antibiotic", "pain-relief"],
+  "metadata": {
+    "writtenBy": "Dr. Amanda Singh",
+    "signedDigitally": true
   }
 }
+````
+
+> MongoDB allows nesting and optional fields—ideal for varied prescription formats.
+> `appointmentId`, `doctorId`, and `patientId` act as foreign key references conceptually.
+
+
+
+

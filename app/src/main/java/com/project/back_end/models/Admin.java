@@ -5,35 +5,34 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
 @Entity
-@Table(name="admins")
+@Table(name = "admins")
 public class Admin {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @NotNull(message = "Username cannot be null")
     @Column(nullable = false, unique = true)
     private String username;
-    
+
     @NotNull(message = "Password cannot be null")
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String password;
 
-    // Constructor default
+    // Default constructor required by JPA
     public Admin() {
     }
 
-    // Constructor con atributos
-    public Admin(Long id, String username, String password) {
-        this.id = id;
+    // Parameterized constructor for convenience
+    public Admin(String username, String password) {
         this.username = username;
         this.password = password;
     }
 
-    
     // Getters and Setters
+
     public Long getId() {
         return id;
     }
@@ -57,8 +56,5 @@ public class Admin {
     public void setPassword(String password) {
         this.password = password;
     }
-    
-    
-
-    
 }
+
